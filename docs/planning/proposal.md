@@ -1,24 +1,30 @@
 # Final project proposal
 
-- [ ] I have reviewed the project guidelines.
-- [ ] I will be working alone on this project.
-- [ ] No significant portion of this project will be (or has been) used in other course work.
+- [x] I have reviewed the project guidelines.
+- [x] I will be working alone on this project.
+- [x] No significant portion of this project will be (or has been) used in other course work.
 
 ## Embedded System Description
 
-At a high level, explain in 2-3 sentences what your embedded system will do.  Then, in 1-2 sentences each, explain each input, the process, and each output. This section is the bulk of the proposal.
+This project will create an amateur radio "fox". The MSP430 will control a Baofeng handheld radio to transmit a FM Morse code signal on the amateur radio band. This signal can then be used to for practice locating radio signal sources with directional antennas ("fox hunting").
+
+The user will be able control the system by using two rotary encoders and a button to change settings displayed on the character LCD. There will also be a switch to quickly enable and disable transmitting.
+
+The outputs will consist of an LCD for the user to input settings, the radio transmission, and three status LEDs. These LEDs will show when the user has transmission enabled, when the radio actually is transmitting (when the PTT signal is triggered), and the last the last one will flash out the morse code.
 
 ## Hardware Setup
 
-What hardware will you require? Provide a conceptual circuit diagram and/or block diagram to help the reviewers understand your proposal. Be sure to introduce and discuss your figures in the text.
+The following is a block diagram showing how all the hardware involved in this project is connected.
+![Block diagram](assets/microcontrollersfinaloverview.png "Block Diagram")
 
 ## Software overview
 
-Discuss, at a high level, a concept of how your code will work. Include a *high-level* flowchart. This is a high-level concept that should concisely communicate the project's concept.
+The following flow chart shows a general overview of how the system software will work.
+![Flow chart](assets/finalsoftwareflow.png "Flow Chart")
 
 ## Testing Procedure
 
-Briefly describe how you will test and verify that your project is a success. Think about how you will *demo* the final project. If you need extra equipment for the demo, be sure that you can either bring the equipment or convincingly simulate it. For example, if you want to build a system that uses CAN bus to interface with your car, you won't be able to bring your car into Cobleigh for the demo...
+I will use a second handheld radio to listen for the radio transmissions. I will vary the settings and listen for the change in the signal on the radio.
 
 
 ## Prescaler
@@ -26,7 +32,7 @@ Briefly describe how you will test and verify that your project is a success. Th
 Desired Prescaler level: 
 
 - [ ] 100%
-- [ ] 95% 
+- [x] 95% 
 - [ ] 90% 
 - [ ] 85% 
 - [ ] 80% 
@@ -37,32 +43,34 @@ Desired Prescaler level:
 **Outline how you meet the requirements for your desired prescalar level**
 
 **The inputs to the system will be:**
-1.  Short description of input #1
-2.  
+1.  Button
+2.  Switch
+3.  Rotary encoders x2
 
 **The outputs of the system will be:**
-1.   Short description of output #1
-2. 
+1.   LCD
+2.   LEDs
+3.   Baofeng radio transmission
 
 **The project objective is**
 
-{text – 1 to 2 sentences}
+The object of this project is to create a amateur radio fox that transmits FM modulated Morse code on the 2 Meter band. The speed and content of the Morse code being transmitted will be adjustable.
 
 **The new hardware or software modules are:**
-1. Short description of new hardware or software module
-2. 
+1. A Baofeng radio. It must be controlled using analog inputs intended for a microphone and switch.
+2. Rotary encoders will be used to interface with the system.
 
 
 The Master will be responsible for:
 
-{text – 1 to 2 sentences}
+All of the inputs. It will also be responsible for the LCD and one of the status LEDs.
 
 The Slave(s) will be responsible for:
 
-{text – 1 to 2 sentences}
+Controlling the Baofeng radio. It will also be responsible for the other two status LEDs not controlled by the master.
 
 
 
 ### Argument for Desired Prescaler
 
-Consider the guidelines presented in the lecture notes and convince the reviewers that this proposal meets the minimum requirements for your desired prescale level.
+I believe this project will meet either the 90% or 95% prescaler. It has two new pieces of hardware, the rotary encoders and the Baofeng radio. The radio in particular will be difficult to control due to the analog nature of its inputs. Two approaches that will explored are generating a square wave with the MSP and then using an analog filtering circuit to create a sine wave, and finding a audio player that can interface with radio and be controlled by the MSP430.
