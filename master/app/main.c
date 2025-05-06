@@ -1,5 +1,5 @@
 #include "intrinsics.h"
-#include <msp430fr2310.h>
+#include <msp430fr2355.h>
 #include <stdbool.h>
 
 // ------- Global Variables ------------
@@ -59,8 +59,8 @@ void lcd_raw_send(int send_data, int num) {
     }
     
     P1DIR &= ~(BIT4 | BIT5 | BIT6 | BIT7); // Set input
-    P1OUT |= BIT0;
-    P2OUT &= ~BIT6;
+    P2OUT |= BIT4;
+    P2OUT &= ~BIT5;
 
     // Check busy flag
     while (busy != 0) {
@@ -81,7 +81,7 @@ void lcd_raw_send(int send_data, int num) {
     _delay_cycles(1000);
 
     P1DIR |= (BIT4 | BIT5 | BIT6 | BIT7);  // Set output
-    P1OUT &= ~BIT0;
+    P2OUT &= ~BIT4;
 }
 
 
@@ -89,7 +89,7 @@ void lcd_string_write(char* string) {
     int i = 0;
 
     while (string[i] != '\0') {
-        P2OUT |= BIT6;
+        P2OUT |= BIT5;
         lcd_raw_send((int)string[i], 2);
         i++;
     }
@@ -107,9 +107,9 @@ void update_bottom(char* string) {
     lcd_string_write(string);
 }
 
-void update_char(int pos, int char) {
+void update_char(int pos, int character) {
     char string[] = {'\0', '\0'};
-    string[0] = char;
+    string[0] = character;
 
     lcd_raw_send((0x40 + 0b10000000 + pos), 2);
 
@@ -159,20 +159,22 @@ int main(void)
     P2OUT &= ~BIT0;
     P2DIR |= BIT0;
 
-    P1OUT &= ~BIT0; // P1.0 is R/W
-    P1DIR |= (BIT0 | BIT1 | BIT4 | BIT5 | BIT6 | BIT7);
+    P2OUT &= ~BIT4; // P1.0 is R/W
+    P2DIR |= BIT4;
+    P1DIR |= (BIT1 | BIT4 | BIT5 | BIT6 | BIT7);
 
-    P2OUT &= ~BIT6; // RS PIN
-    P2DIR |= BIT6;
+    P2OUT &= ~BIT5; // RS PIN
+    P2DIR |= BIT5;
 
     // Rotary encoder 1
     P6DIR &= ~(BIT0 | BIT1);
+    P6REN |= (BIT0 | BIT1);
+    P6OUT |= (BIT0 | BIT1);
     
     // Rotary encoder 2
     P6DIR &= ~(BIT2 | BIT3);
-
-    // Switch
-    P5DIR &= ~BIT0;
+    P6REN |= (BIT2 | BIT3);
+    P6OUT |= (BIT2 | BIT3);
 
     // Init I2C
     UCB0CTLW0 |= UCSWRST;  // Software reset
@@ -184,7 +186,7 @@ int main(void)
     UCB0I2CSA = 0x0002;
 
     UCB0CTLW1 |= UCASTP_2;
-    UCB0BCNT = 0x02;
+    UCB0TBCNT = 2;
 
     P1SEL0 |= BIT2;  // Confiure I2C pins  P1.3 SCL, P1.2 SDA
     P1SEL0 |= BIT3;
@@ -228,45 +230,49 @@ int main(void)
         rot1Dir = get_direction(P6IN & BIT0, rot1A, (P6IN & BIT1) >> 1);
         rot1A = P6IN & BIT0;
         // Check rot 2
-        rot1Dir = get_direction((P6IN & BIT2) >> 2, rot2A, (P6IN & BIT3) >> 3);
+        rot2Dir = get_direction((P6IN & BIT2) >> 2, rot2A, (P6IN & BIT3) >> 3);
         rot2A = (P6IN & BIT2) >> 2;
 
         if (rot1Dir != 0) {
             cursor_loc += rot1Dir;
-            cursor_loc = cursor_loc % 8;
+            cursor_loc = cursor_loc % 9;
         }
 
         if (rot2Dir != 0) {
-            callsign[cursor_loc] += rot2Dir;
-            callsign[cursor_loc] %= 37;
+            if (cursor_loc == 8) {
+                tx_switch ^= 0x01;
+                i2c_update(8, tx_switch);
 
-            i2c_update(cursor_loc, callsign[cursor_loc]);
+                if (tx_switch) {
+                    update_char(15, 'Y');
+                } else {
+                    update_char(15, 'N');
+                }
+            } else {
 
-            update_char(cursor_loc, valid_chars[callsign[cursor_loc]]);
-        }
+                callsign[cursor_loc] += rot2Dir;
+                callsign[cursor_loc] %= 37;
 
-        if ((P5IN & BIT0) != tx_switch) {
-            tx_switch = P5IN & BIT0;
-            i2c_update(8, tx_switch);
+                i2c_update(cursor_loc, callsign[cursor_loc]);
+
+                update_char(cursor_loc, valid_chars[callsign[cursor_loc]]);
+
+            }
         }
     }
 }
 
 #pragma vector=EUSCI_B0_VECTOR
 __interrupt void EUSCI_B0_I2C_ISR(void){
-    int current = UCB0IV;
 
-    switch(current) {
-    case 0x18: // Tx interrupt
-        if (i2c_state == 0) {
-            UCB0TXBUF = curr_opcode;
-            i2c_state++;
-        }
-        if (i2c_state == 1) {
-            UCB0TXBUF = curr_operand;
-            i2c_state++;
-            i2c_busy = 0;
-        }
-        break;
+    if (i2c_state == 0) {
+        UCB0TXBUF = curr_opcode;
+        i2c_state++;
+    } else if (i2c_state == 1) {
+        UCB0TXBUF = curr_operand;
+        i2c_state++;
+        i2c_busy = 0;
+    } else {
+        UCB0TXBUF = 0x0;
     }
 }

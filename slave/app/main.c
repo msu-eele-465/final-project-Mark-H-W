@@ -5,7 +5,7 @@
 // ------- Global Variables ------------
 volatile int i2c_state = 0;
 volatile int opcode = 0;
-volatile int status[] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+volatile int status[] = {2, 2, 2, 2, 2, 2, 2, 2, 2};
 
 volatile int active = 0;
 volatile int curr_char = 0;
@@ -13,7 +13,7 @@ volatile int curr_unit = 1; // one-indexed
 volatile int curr_sub_unit = 1; // one-indexed
 
 const int slave_addr = 0x0002;
-const int char_lengths = {
+const int char_lengths[] = {
     3, // ' '
     5, // 0
     5, // 1
@@ -52,7 +52,7 @@ const int char_lengths = {
     4, // Y
     4 // Z
 };
-const int char_def = {
+const int char_def[] = {
     0b000, // ' '
     0b11111, // 0
     0b01111, // 1
@@ -112,10 +112,10 @@ int main(void)
     TB0CCR0 = 1136; // 1/2 440 Hz
 
     // Setup timer B1
-    TB0CTL |= TBCLR;
-    TB0CTL |= TBSSEL__ACLK;
-    TB0CTL |= MC__UP;
-    TB0CCR0 = 6553; // ~ 5 WPM
+    TB1CTL |= TBCLR;
+    TB1CTL |= TBSSEL__ACLK;
+    TB1CTL |= MC__UP;
+    TB1CCR0 = 6553; // ~ 5 WPM
 
     // Init I2C
     UCB0CTLW0 |= UCSWRST;  // Software reset
@@ -140,6 +140,10 @@ int main(void)
     // Timer 0 interrupts
     TB0CCTL0 &= ~CCIFG;
     TB0CCTL0 |= CCIE;
+
+    // Timer 1 interrupts
+    TB1CCTL0 &= ~CCIFG;
+    TB1CCTL0 |= CCIE;
 
     __enable_interrupt();
 
@@ -185,8 +189,9 @@ __interrupt void TIMER0_ISR(void) {
 
 #pragma vector=TIMER1_B0_VECTOR
 __interrupt void TIMER1_ISR(void) {
-    int definition = 0;
+    int definition;
     if (curr_char == 8) {
+        P1OUT &= ~BIT0;
         active = 0;
         curr_unit++;
         if (curr_unit > 7) {
@@ -195,9 +200,10 @@ __interrupt void TIMER1_ISR(void) {
             curr_char = 0;
         }
     } else {
+        P1OUT |= BIT0;
         definition = char_def[status[curr_char]];
 
-        if (defintion >> (char_lengths[status[curr_char]] - curr_unit)) {
+        if ((definition >> (char_lengths[status[curr_char]] - curr_unit)) & 0x01) {
             // Play dash
             if (curr_sub_unit > 3) {
                 active = 0;
@@ -231,11 +237,5 @@ __interrupt void TIMER1_ISR(void) {
         }
     }
 
-
-
-    int definition = char_def[status[curr_char]]
-    status[curr_char]
-
-
-    TB0CCTL0 &= ~CCIFG;
+    TB1CCTL0 &= ~CCIFG;
 }

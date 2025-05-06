@@ -6,7 +6,7 @@
 	<deviceFamily value="MSP430"/>
 	<connection value="common/targetdb/connections/TIMSP430-USB.xml"/>
 	<createSlaveProjects value=""/>
-	<activeTargetConfiguration value="targetConfigs/MSP430FR2310.ccxml"/>
+	<activeTargetConfiguration value="targetConfigs/MSP430FR2355.ccxml"/>
 	<isTargetConfigurationManual value="false"/>
 	<filesToOpen value=""/>
 </projectOptions>
